@@ -6,6 +6,8 @@ import java.util.List;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import com.jsoup.bean.LinkTypeData;
 import com.jsoup.rule.Rule;
@@ -63,6 +65,44 @@ public class ExtractService {
 			case StaticUtil.POST:
 				doc = conn.timeout(100000).post();
 				break;
+			}
+			
+			//处理返回数据
+			Elements results = new Elements();
+			switch (type)
+			{
+			case StaticUtil.CLASS:
+				results = doc.getElementsByClass(resultTagName);
+				break;
+
+			case StaticUtil.ID:
+				Element result = doc.getElementById(resultTagName);
+				results.add(result);
+				break;
+			case StaticUtil.SELECTION:
+				results = doc.select(resultTagName);
+				break;
+			default:
+				//如果resultTagName为空的话，就默认去body标签
+				if (TextUtil.isEmpty(resultTagName))
+				{
+					results = doc.getElementsByTag("body");
+				}
+			}
+			for (Element result : results)
+			{
+				Elements links = result.getElementsByTag("a");
+				for (Element link : links)
+				{
+					//必要的筛选。
+					String linkHref = link.attr("href");
+					String linkText = link.text();
+					
+					data = new LinkTypeData();
+					data.setLinkHref(linkHref);
+					data.setLinkText(linkText);
+					datas.add(data);
+				}
 			}
 		} 
 		catch (Exception e) 
